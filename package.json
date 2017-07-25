@@ -9,7 +9,7 @@
   "bugs": {
     "url": "https://github.com/handsontable/handsontable/issues"
   },
-  "main": "./dist/handsontable.js",
+  "main": "./dist/handsontable.full.js",
   "author": "Handsoncode <hello@handsontable.com>",
   "version": "0.31.2",
   "keywords": [
