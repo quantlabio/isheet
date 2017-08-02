@@ -31,6 +31,7 @@ import * as domEventHelpers from './helpers/dom/event';
 import * as plugins from './plugins/index';
 import {registerPlugin} from './plugins';
 import DefaultSettings from './defaultSettings';
+import * as formula from './formula';
 
 function Handsontable(rootElement, userSettings) {
   const instance = new Core(rootElement, userSettings || {});
