@@ -1,5 +1,5 @@
 {
-  "name": "handsontable",
+  "name": "@quantlab/handsontable",
   "description": "Spreadsheet-like data grid editor that provides copy/paste functionality compatible with Excel/Google Docs",
   "homepage": "http://handsontable.com/",
   "repository": {
@@ -11,10 +11,11 @@
   },
   "author": "Handsoncode <hello@handsontable.com>",
   "version": "0.33.0",
-  "browser": "dist/handsontable.js",
+  "browser": "dist/@quantlab/handsontable.full.js",
   "main": "commonjs/index.js",
   "module": "es/index.js",
   "jsnext:main": "es/index.js",
+  "types": "handsontable.d.ts",
   "scripts": {
     "clean": "rimraf commonjs es coverage",
     "lint": "eslint --rule 'no-restricted-globals: 0' test && eslint --rule 'no-restricted-globals: 0' --ext .unit.js --ext .e2e.js src/ && eslint --ignore-pattern 'src/plugins/**/test/**' src/",
