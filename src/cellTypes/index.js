@@ -7,6 +7,7 @@ import autocompleteCellType from './autocompleteType';
 import checkboxCellType from './checkboxType';
 import dateCellType from './dateType';
 import dropdownCellType from './dropdownType';
+import formulaCellType from './formulaType';
 import handsontableCellType from './handsontableType';
 import numericCellType from './numericType';
 import passwordCellType from './passwordType';
@@ -25,11 +26,13 @@ _register('autocomplete', autocompleteCellType);
 _register('checkbox', checkboxCellType);
 _register('date', dateCellType);
 _register('dropdown', dropdownCellType);
+_register('formula', formulaCellType);
 _register('handsontable', handsontableCellType);
 _register('numeric', numericCellType);
 _register('password', passwordCellType);
 _register('text', textCellType);
 _register('time', timeCellType);
+
 
 /**
  * Retrieve cell type object.

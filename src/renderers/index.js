@@ -3,6 +3,7 @@ import staticRegister from './../utils/staticRegister';
 import baseRenderer from './_cellDecorator';
 import autocompleteRenderer from './autocompleteRenderer';
 import checkboxRenderer from './checkboxRenderer';
+import formulaRenderer from './formulaRenderer';
 import htmlRenderer from './htmlRenderer';
 import numericRenderer from './numericRenderer';
 import passwordRenderer from './passwordRenderer';
@@ -23,6 +24,7 @@ register('html', htmlRenderer);
 register('numeric', numericRenderer);
 register('password', passwordRenderer);
 register('text', textRenderer);
+register('formula', formulaRenderer);
 
 /**
  * Retrieve renderer function.

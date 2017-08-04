@@ -1,12 +1,12 @@
 import BasePlugin from './../_base';
 import {registerPlugin} from './../../plugins';
-import {Parser} from '../../formula';
+import {Parser} from './../../formula';
 
 var ruleJS = (function (root) {
   'use strict';
   var instance = this;
   var rootElement = document.getElementById(root) || null;
-  var version = '0.1.0';
+  var version = '1.0.0';
   var parser = {};
   var el = {};
   var Matrix = function () {
@@ -799,7 +799,7 @@ var ruleJS = (function (root) {
     return result;
   };
 
-  var init = function () {
+  var init = function (hotInstance) {
     instance = this;
 
     parser = new Parser();
@@ -812,7 +812,7 @@ var ruleJS = (function (root) {
     });
 
     parser.on('callRangeValue', function(startCellCoord, endCellCoord, done) {
-      //var data = [];using the same variable passed to handsontable
+      var data = hotInstance.getSourceData();
 
       instance.helper.cellRangeValue.call(el, startCellCoord.label, endCellCoord.label);
 
@@ -858,142 +858,24 @@ class Formula extends BasePlugin {
    constructor(hotInstance) {
      super(hotInstance);
 
-     this.formulaCell = {
-       renderer: this.formulaRenderer,
-       //editor: Handsontable.editors.TextEditor,
-       dataType: 'formula'
-     };
+     this.instance = hotInstance;
 
-     this.plugin = new ruleJS();
-     this.plugin.init();
-     this.plugin.custom = {
+     var custom = {
        cellValue: hotInstance.getDataAtCell
      };
 
+     hotInstance.plugin = new ruleJS();
+     hotInstance.plugin.init(hotInstance);
+     hotInstance.plugin.custom = custom;
+
    }
 
-   isFormula(value) {
-     if (value) {
-       if (value[0] === '=') {
-         return true;
-       }
-     }
-     return false;
-   };
-
-   formulaRenderer(instance, TD, row, col, prop, value, cellProperties) {
-     if (instance.formulasEnabled && isFormula(value)) {
-       // translate coordinates into cellId
-       var cellId = instance.plugin.utils.translateCellCoords({
-             row: row,
-             col: col
-           }),
-           prevFormula = null,
-           formula = null,
-           needUpdate = false,
-           error, result;
-
-       if (!cellId) {
-         return;
-       }
-
-       // set formula cell id attribute
-       //TD.id = cellId;
-
-       // get cell data
-       var item = instance.plugin.matrix.getItem(cellId);
-
-       if (item) {
-
-         needUpdate = !! item.needUpdate;
-
-         if (item.error) {
-           prevFormula = item.formula;
-           error = item.error;
-
-           if (needUpdate) {
-             error = null;
-           }
-         }
-       }
-
-       // check if typed formula or cell value should be recalculated
-       if ((value && value[0] === '=') || needUpdate) {
-
-         formula = value.substr(1).toUpperCase();
-
-         if (!error || formula !== prevFormula) {
-
-           var currentItem = item;
-
-           if (!currentItem) {
-
-             // define item to rulesJS matrix if not exists
-             item = {
-               id: cellId,
-               formula: formula
-             };
-
-             // add item to matrix
-             currentItem = instance.plugin.matrix.addItem(item);
-           }
-
-           // parse formula
-           var newValue = instance.plugin.parse(formula, {
-             row: row,
-             col: col,
-             id: cellId
-           });
-
-           // check if update needed
-           needUpdate = (newValue.error === '#NEED_UPDATE');
-
-           // update item value and error
-           instance.plugin.matrix.updateItem(currentItem, {
-             formula: formula,
-             value: newValue.result,
-             error: newValue.error,
-             needUpdate: needUpdate
-           });
-
-           error = newValue.error;
-           result = newValue.result;
-
-           // update cell value in hot
-           value = error || result;
-         }
-       }
-
-       if (error) {
-         // clear cell value
-         if (!value) {
-           // reset error
-           error = null;
-         } else {
-           // show error
-           value = error;
-         }
-       }
-
-       // change background color
-       if (instance.plugin.utils.isSet(error)) {
-         Handsontable.Dom.addClass(TD, 'formula-error');
-       } else if (instance.plugin.utils.isSet(result)) {
-         Handsontable.Dom.removeClass(TD, 'formula-error');
-         Handsontable.Dom.addClass(TD, 'formula');
-       }
-     }
-
-     // apply changes
-     if (cellProperties.type === 'numeric') {
-       numericCell.renderer.apply(this, [instance, TD, row, col, prop, value, cellProperties]);
-     } else {
-       textCell.renderer.apply(this, [instance, TD, row, col, prop, value, cellProperties]);
-     }
-   };
+   isEnabled() {
+     return true;
+   }
 
    afterChange(changes, source) {
-     var instance = this;
+     var instance = this.instance;
 
      if (!instance.formulasEnabled) {
        return;
@@ -1037,10 +919,10 @@ class Formula extends BasePlugin {
          instance.render();
        }
      }
-   };
+   }
 
    beforeAutofillInsidePopulate(index, direction, data, deltas, iterators, selected) {
-     var instance = this;
+     var instance = this.instance;
 
      var r = index.row,
          c = index.col,
@@ -1130,14 +1012,14 @@ class Formula extends BasePlugin {
        value: value,
        iterators: iterators
      };
-   };
+   }
 
    afterCreateRow(row, amount, auto) {
      //if (auto) {
      //  return;
      //}
 
-     var instance = this;
+     var instance = this.instance;
 
      var selectedRow = instance.plugin.utils.isArray(instance.getSelected()) ? instance.getSelected()[0] : undefined;
 
@@ -1183,10 +1065,10 @@ class Formula extends BasePlugin {
      if (changes) {
        instance.setDataAtCell(changes);
      }
-   };
+   }
 
    afterCreateCol(col) {
-     var instance = this;
+     var instance = this.instance;
 
      var selectedCol = instance.plugin.utils.isArray(instance.getSelected()) ? instance.getSelected()[1] : undefined;
 
@@ -1233,10 +1115,10 @@ class Formula extends BasePlugin {
      if (changes) {
        instance.setDataAtCell(changes);
      }
-   };
+   }
 
    enablePlugin() {
-     this.addHook('beforeInit', () => this.init());
+     //this.addHook('beforeInit', () => this.init());
      //this.addHook('afterUpdateSettings', () => this.init.call(this, 'afterUpdateSettings'));
      this.addHook('afterChange', (changes, source) => this.afterChange(changes, source));
      this.addHook('beforeAutofillInsidePopulate', (index, direction, data, deltas, iterators, selected) => this.beforeAutofillInsidePopulate(index, direction, data, deltas, iterators, selected));
@@ -1244,6 +1126,22 @@ class Formula extends BasePlugin {
      this.addHook('afterCreateCol', (col) => this.afterCreateCol(col));
 
      super.enablePlugin();
+   }
+
+   /**
+    * Update plugin for this Handsontable instance.
+    */
+   updatePlugin() {
+     this.disablePlugin();
+     this.enablePlugin();
+     super.updatePlugin();
+   }
+
+   /**
+    * Disable plugin for this Handsontable instance.
+    */
+   disablePlugin() {
+     super.disablePlugin();
    }
 
    /**
