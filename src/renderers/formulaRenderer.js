@@ -1,4 +1,4 @@
-import {fastInnerText} from './../helpers/dom/element';
+import {fastInnerText, addClass, removeClass} from './../helpers/dom/element';
 import {stringify} from './../helpers/mixed';
 import {getRenderer} from './index';
 
@@ -23,6 +23,14 @@ function isFormula(value) {
  * @param cellProperties
  */
 function formulaRenderer(instance, TD, row, col, prop, value, cellProperties) {
+  //set cellProperties
+  if(cellProperties.fontWeight != null)
+    TD.style.fontWeight = cellProperties.fontWeight;
+  if(cellProperties.color != null)
+    TD.style.color = cellProperties.color;
+  if(cellProperties.background != null)
+    TD.style.background = cellProperties.background;
+
   if (isFormula(value)) {
     // translate coordinates into cellId
     var cellId = instance.plugin.utils.translateCellCoords({
@@ -117,24 +125,12 @@ function formulaRenderer(instance, TD, row, col, prop, value, cellProperties) {
     }
 
     // change background color
-    const className = cellProperties.className || '';
-
-    let classArr = className.length ? className.split(' ') : [];
-
     if (instance.plugin.utils.isSet(error)) {
-      if (classArr.indexOf('formula-error') < 0) {
-        classArr.push('formula-error');
-      }
+      addClass(TD, 'formula-error');
     } else if (instance.plugin.utils.isSet(result)) {
-      if (classArr.indexOf('formula-error') >= 0) {
-        classArr.splice(classArr.indexOf('formula-error'), 1);
-      }
-      if (classArr.indexOf('formula') < 0) {
-        classArr.push('formula');
-      }
+      removeClass(TD, 'formula-error');
+      addClass(TD, 'formula');
     }
-
-    cellProperties.className = classArr.join(' ');
   }
 
   var escaped = stringify(value);

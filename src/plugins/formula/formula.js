@@ -823,7 +823,11 @@ var ruleJS = (function (root) {
         var colFragment = [];
 
         for (var col = startCellCoord.column.index; col <= endCellCoord.column.index; col++) {
-          colFragment.push(rowData[col]);
+          var cellId = instance.utils.translateCellCoords({row: row, col: col});
+          var val = instance.helper.cellValue(cellId);
+          while(val[0]==='=')
+            val = instance.helper.cellValue(val.substr(1));
+          colFragment.push(val);
         }
         fragment.push(colFragment);
       }
@@ -852,7 +856,6 @@ var ruleJS = (function (root) {
   };
 
 });
-
 
 class Formula extends BasePlugin {
    constructor(hotInstance) {
@@ -1121,7 +1124,7 @@ class Formula extends BasePlugin {
      //this.addHook('beforeInit', () => this.init());
      //this.addHook('afterUpdateSettings', () => this.init.call(this, 'afterUpdateSettings'));
      this.addHook('afterChange', (changes, source) => this.afterChange(changes, source));
-     this.addHook('beforeAutofillInsidePopulate', (index, direction, data, deltas, iterators, selected) => this.beforeAutofillInsidePopulate(index, direction, data, deltas, iterators, selected));
+     //this.addHook('beforeAutofillInsidePopulate', (index, direction, data, deltas, iterators, selected) => this.beforeAutofillInsidePopulate(index, direction, data, deltas, iterators, selected));
      this.addHook('afterCreateRow', (row, amount, auto) => this.afterCreateRow(row, amount, auto));
      this.addHook('afterCreateCol', (col) => this.afterCreateCol(col));
 

@@ -23,8 +23,8 @@
  * TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
  * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  * 
- * Version: 0.33.0
- * Date: Fri Aug 04 2017 16:54:30 GMT+0800 (China Standard Time)
+ * Version: 0.33.2
+ * Date: Mon Aug 07 2017 13:35:36 GMT+0800 (China Standard Time)
  */
 (function webpackUniversalModuleDefinition(root, factory) {
 	if(typeof exports === 'object' && typeof module === 'object')
@@ -36383,9 +36383,9 @@ Handsontable.DefaultSettings = _defaultSettings2.default;
 Handsontable.EventManager = _eventManager2.default;
 Handsontable._getListenersCounter = _eventManager.getListenersCounter; // For MemoryLeak tests
 
-Handsontable.buildDate = "2017-08-04T08:54:30.739Z";
+Handsontable.buildDate = "2017-08-07T05:35:36.339Z";
 Handsontable.packageName = "@quantlab/handsontable";
-Handsontable.version = "0.33.0";
+Handsontable.version = "0.33.2";
 
 var baseVersion = undefined;
 
@@ -40044,6 +40044,11 @@ function isFormula(value) {
  * @param cellProperties
  */
 function formulaRenderer(instance, TD, row, col, prop, value, cellProperties) {
+  //set cellProperties
+  if (cellProperties.fontWeight != null) TD.style.fontWeight = cellProperties.fontWeight;
+  if (cellProperties.color != null) TD.style.color = cellProperties.color;
+  if (cellProperties.background != null) TD.style.background = cellProperties.background;
+
   if (isFormula(value)) {
     // translate coordinates into cellId
     var cellId = instance.plugin.utils.translateCellCoords({
@@ -40139,24 +40144,12 @@ function formulaRenderer(instance, TD, row, col, prop, value, cellProperties) {
     }
 
     // change background color
-    var className = cellProperties.className || '';
-
-    var classArr = className.length ? className.split(' ') : [];
-
     if (instance.plugin.utils.isSet(error)) {
-      if (classArr.indexOf('formula-error') < 0) {
-        classArr.push('formula-error');
-      }
+      (0, _element.addClass)(TD, 'formula-error');
     } else if (instance.plugin.utils.isSet(result)) {
-      if (classArr.indexOf('formula-error') >= 0) {
-        classArr.splice(classArr.indexOf('formula-error'), 1);
-      }
-      if (classArr.indexOf('formula') < 0) {
-        classArr.push('formula');
-      }
+      (0, _element.removeClass)(TD, 'formula-error');
+      (0, _element.addClass)(TD, 'formula');
     }
-
-    cellProperties.className = classArr.join(' ');
   }
 
   var escaped = (0, _mixed.stringify)(value);
@@ -53246,7 +53239,11 @@ var ruleJS = function ruleJS(root) {
         var colFragment = [];
 
         for (var col = startCellCoord.column.index; col <= endCellCoord.column.index; col++) {
-          colFragment.push(rowData[col]);
+          var cellId = instance.utils.translateCellCoords({ row: row, col: col });
+          var val = instance.helper.cellValue(cellId);
+          while (val[0] === '=') {
+            val = instance.helper.cellValue(val.substr(1));
+          }colFragment.push(val);
         }
         fragment.push(colFragment);
       }
@@ -53562,9 +53559,7 @@ var Formula = function (_BasePlugin) {
       this.addHook('afterChange', function (changes, source) {
         return _this2.afterChange(changes, source);
       });
-      this.addHook('beforeAutofillInsidePopulate', function (index, direction, data, deltas, iterators, selected) {
-        return _this2.beforeAutofillInsidePopulate(index, direction, data, deltas, iterators, selected);
-      });
+      //this.addHook('beforeAutofillInsidePopulate', (index, direction, data, deltas, iterators, selected) => this.beforeAutofillInsidePopulate(index, direction, data, deltas, iterators, selected));
       this.addHook('afterCreateRow', function (row, amount, auto) {
         return _this2.afterCreateRow(row, amount, auto);
       });
