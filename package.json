@@ -10,7 +10,7 @@
     "url": "https://github.com/handsontable/handsontable/issues"
   },
   "author": "Handsoncode <hello@handsontable.com>",
-  "version": "0.33.3",
+  "version": "0.33.4",
   "browser": "dist/@quantlab/handsontable.full.js",
   "main": "commonjs/index.js",
   "module": "es/index.js",

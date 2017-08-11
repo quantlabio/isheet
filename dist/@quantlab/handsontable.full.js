@@ -23,8 +23,8 @@
  * TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
  * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  * 
- * Version: 0.33.2
- * Date: Mon Aug 07 2017 13:35:36 GMT+0800 (China Standard Time)
+ * Version: 0.33.4
+ * Date: Fri Aug 11 2017 10:34:25 GMT+0800 (China Standard Time)
  */
 (function webpackUniversalModuleDefinition(root, factory) {
 	if(typeof exports === 'object' && typeof module === 'object')
@@ -53255,9 +53255,9 @@ Handsontable.DefaultSettings = _defaultSettings2.default;
 Handsontable.EventManager = _eventManager2.default;
 Handsontable._getListenersCounter = _eventManager.getListenersCounter; // For MemoryLeak tests
 
-Handsontable.buildDate = "2017-08-07T05:35:36.339Z";
+Handsontable.buildDate = "2017-08-11T02:34:25.230Z";
 Handsontable.packageName = "@quantlab/handsontable";
-Handsontable.version = "0.33.2";
+Handsontable.version = "0.33.4";
 
 var baseVersion = undefined;
 
@@ -61667,12 +61667,13 @@ function isFormula(value) {
 function formulaRenderer(instance, TD, row, col, prop, value, cellProperties) {
   //set cellProperties
   if (cellProperties.fontWeight != null) TD.style.fontWeight = cellProperties.fontWeight;
+  if (cellProperties.fontStyle != null) TD.style.fontStyle = cellProperties.fontStyle;
   if (cellProperties.color != null) TD.style.color = cellProperties.color;
   if (cellProperties.background != null) TD.style.background = cellProperties.background;
 
   if (isFormula(value)) {
     // translate coordinates into cellId
-    var cellId = instance.plugin.utils.translateCellCoords({
+    var cellId = instance.formula.utils.translateCellCoords({
       row: row,
       col: col
     }),
@@ -61686,11 +61687,8 @@ function formulaRenderer(instance, TD, row, col, prop, value, cellProperties) {
       return;
     }
 
-    // set formula cell id attribute
-    //TD.id = cellId;
-
     // get cell data
-    var item = instance.plugin.matrix.getItem(cellId);
+    var item = instance.formula.matrix.getItem(cellId);
 
     if (item) {
 
@@ -61724,11 +61722,11 @@ function formulaRenderer(instance, TD, row, col, prop, value, cellProperties) {
           };
 
           // add item to matrix
-          currentItem = instance.plugin.matrix.addItem(item);
+          currentItem = instance.formula.matrix.addItem(item);
         }
 
         // parse formula
-        var newValue = instance.plugin.parse(formula, {
+        var newValue = instance.formula.parse(formula, {
           row: row,
           col: col,
           id: cellId
@@ -61738,7 +61736,7 @@ function formulaRenderer(instance, TD, row, col, prop, value, cellProperties) {
         needUpdate = newValue.error === '#NEED_UPDATE';
 
         // update item value and error
-        instance.plugin.matrix.updateItem(currentItem, {
+        instance.formula.matrix.updateItem(currentItem, {
           formula: formula,
           value: newValue.result,
           error: newValue.error,
@@ -61765,9 +61763,9 @@ function formulaRenderer(instance, TD, row, col, prop, value, cellProperties) {
     }
 
     // change background color
-    if (instance.plugin.utils.isSet(error)) {
+    if (instance.formula.utils.isSet(error)) {
       (0, _element.addClass)(TD, 'formula-error');
-    } else if (instance.plugin.utils.isSet(result)) {
+    } else if (instance.formula.utils.isSet(result)) {
       (0, _element.removeClass)(TD, 'formula-error');
       (0, _element.addClass)(TD, 'formula');
     }
@@ -74044,7 +74042,7 @@ var ruleJS = function ruleJS(root) {
   var instance = this;
   var rootElement = document.getElementById(root) || null;
   var version = '1.0.0';
-  var parser = {};
+  var parser = new _formula.Parser();
   var el = {};
   var Matrix = function Matrix() {
     var item = {
@@ -74839,7 +74837,7 @@ var ruleJS = function ruleJS(root) {
   var init = function init(hotInstance) {
     instance = this;
 
-    parser = new _formula.Parser();
+    //parser = new Parser();
 
     parser.on('callCellValue', function (cellCoord, done) {
       var val = instance.helper.cellValue.call(el, cellCoord.label);
@@ -74889,7 +74887,8 @@ var ruleJS = function ruleJS(root) {
     version: version,
     utils: utils,
     helper: helper,
-    parse: parse
+    parse: parse,
+    parser: parser
   };
 };
 
@@ -74907,9 +74906,9 @@ var Formula = function (_BasePlugin) {
       cellValue: hotInstance.getDataAtCell
     };
 
-    hotInstance.plugin = new ruleJS();
-    hotInstance.plugin.init(hotInstance);
-    hotInstance.plugin.custom = custom;
+    hotInstance.formula = new ruleJS();
+    hotInstance.formula.init(hotInstance);
+    hotInstance.formula.custom = custom;
 
     return _this;
   }
@@ -74939,21 +74938,21 @@ var Formula = function (_BasePlugin) {
               prevValue = item[2],
               value = item[3];
 
-          var cellId = instance.plugin.utils.translateCellCoords({
+          var cellId = instance.formula.utils.translateCellCoords({
             row: row,
             col: col
           });
 
           // if changed value, all references cells should be recalculated
           if (value[0] !== '=' || prevValue !== value) {
-            instance.plugin.matrix.removeItem(cellId);
+            instance.formula.matrix.removeItem(cellId);
 
             // get referenced cells
-            var deps = instance.plugin.matrix.getDependencies(cellId);
+            var deps = instance.formula.matrix.getDependencies(cellId);
 
             // update cells
             deps.forEach(function (itemId) {
-              instance.plugin.matrix.updateItem(itemId, {
+              instance.formula.matrix.updateItem(itemId, {
                 needUpdate: true
               });
             });
@@ -74990,7 +74989,7 @@ var Formula = function (_BasePlugin) {
         }
 
         return {
-          value: instance.plugin.utils.updateFormula(value, direction, delta),
+          value: instance.formula.utils.updateFormula(value, direction, delta),
           iterators: iterators
         };
       } else {
@@ -74999,11 +74998,11 @@ var Formula = function (_BasePlugin) {
         // increment or decrement  values for more than 2 selected cells
         if (rlength >= 2 || clength >= 2) {
 
-          var newValue = instance.plugin.helper.number(value),
+          var newValue = instance.formula.helper.number(value),
               ii,
               start;
 
-          if (instance.plugin.utils.isNumber(newValue)) {
+          if (instance.formula.utils.isNumber(newValue)) {
 
             if (['down', 'up'].indexOf(direction) !== -1) {
 
@@ -75016,7 +75015,7 @@ var Formula = function (_BasePlugin) {
                 ii = (selected.row - r) % rlength;
                 start = ii > 0 ? rlength - ii : 0;
 
-                newValue = instance.plugin.helper.number(data[start][c]);
+                newValue = instance.formula.helper.number(data[start][c]);
 
                 newValue += delta * rlength * iterators.row;
 
@@ -75036,7 +75035,7 @@ var Formula = function (_BasePlugin) {
                 ii = (selected.col - c) % clength;
                 start = ii > 0 ? clength - ii : 0;
 
-                newValue = instance.plugin.helper.number(data[r][start]);
+                newValue = instance.formula.helper.number(data[r][start]);
 
                 newValue += delta * clength * (iterators.col || 1);
 
@@ -75070,20 +75069,20 @@ var Formula = function (_BasePlugin) {
 
       var instance = this.instance;
 
-      var selectedRow = instance.plugin.utils.isArray(instance.getSelected()) ? instance.getSelected()[0] : undefined;
+      var selectedRow = instance.formula.utils.isArray(instance.getSelected()) ? instance.getSelected()[0] : undefined;
 
-      if (instance.plugin.utils.isUndefined(selectedRow)) {
+      if (instance.formula.utils.isUndefined(selectedRow)) {
         return;
       }
 
       var direction = selectedRow >= row ? 'before' : 'after',
-          items = instance.plugin.matrix.getRefItemsToRow(row),
+          items = instance.formula.matrix.getRefItemsToRow(row),
           counter = 1,
           changes = [];
 
       items.forEach(function (id) {
-        var item = instance.plugin.matrix.getItem(id),
-            formula = instance.plugin.utils.changeFormula(item.formula, 1, {
+        var item = instance.formula.matrix.getItem(id),
+            formula = instance.formula.utils.changeFormula(item.formula, 1, {
           row: row
         }),
             // update formula if needed
@@ -75094,14 +75093,14 @@ var Formula = function (_BasePlugin) {
 
           // change row index and get new coordinates
           if (direction === 'before' && selectedRow <= item.row || direction === 'after' && selectedRow < item.row) {
-            newId = instance.plugin.utils.changeRowIndex(id, counter);
+            newId = instance.formula.utils.changeRowIndex(id, counter);
           }
 
-          var cellCoords = instance.plugin.utils.cellCoords(newId);
+          var cellCoords = instance.formula.utils.cellCoords(newId);
 
           if (newId !== id) {
             // remove current item from matrix
-            instance.plugin.matrix.removeItem(id);
+            instance.formula.matrix.removeItem(id);
           }
 
           // set updated formula in new cell
@@ -75110,7 +75109,7 @@ var Formula = function (_BasePlugin) {
       });
 
       if (items) {
-        instance.plugin.matrix.removeItemsBelowRow(row);
+        instance.formula.matrix.removeItemsBelowRow(row);
       }
 
       if (changes) {
@@ -75122,21 +75121,21 @@ var Formula = function (_BasePlugin) {
     value: function afterCreateCol(col) {
       var instance = this.instance;
 
-      var selectedCol = instance.plugin.utils.isArray(instance.getSelected()) ? instance.getSelected()[1] : undefined;
+      var selectedCol = instance.formula.utils.isArray(instance.getSelected()) ? instance.getSelected()[1] : undefined;
 
-      if (instance.plugin.utils.isUndefined(selectedCol)) {
+      if (instance.formula.utils.isUndefined(selectedCol)) {
         return;
       }
 
-      var items = instance.plugin.matrix.getRefItemsToColumn(col),
+      var items = instance.formula.matrix.getRefItemsToColumn(col),
           counter = 1,
           direction = selectedCol >= col ? 'before' : 'after',
           changes = [];
 
       items.forEach(function (id) {
 
-        var item = instance.plugin.matrix.getItem(id),
-            formula = instance.plugin.utils.changeFormula(item.formula, 1, {
+        var item = instance.formula.matrix.getItem(id),
+            formula = instance.formula.utils.changeFormula(item.formula, 1, {
           col: col
         }),
             // update formula if needed
@@ -75147,14 +75146,14 @@ var Formula = function (_BasePlugin) {
 
           // change col index and get new coordinates
           if (direction === 'before' && selectedCol <= item.col || direction === 'after' && selectedCol < item.col) {
-            newId = instance.plugin.utils.changeColIndex(id, counter);
+            newId = instance.formula.utils.changeColIndex(id, counter);
           }
 
-          var cellCoords = instance.plugin.utils.cellCoords(newId);
+          var cellCoords = instance.formula.utils.cellCoords(newId);
 
           if (newId !== id) {
             // remove current item from matrix if id changed
-            instance.plugin.matrix.removeItem(id);
+            instance.formula.matrix.removeItem(id);
           }
 
           // set updated formula in new cell
@@ -75163,7 +75162,7 @@ var Formula = function (_BasePlugin) {
       });
 
       if (items) {
-        instance.plugin.matrix.removeItemsBelowCol(col);
+        instance.formula.matrix.removeItemsBelowCol(col);
       }
 
       if (changes) {
@@ -75297,7 +75296,9 @@ var Parser = function (_Emitter) {
         return _this._callVariable(variable);
       },
       evaluateByOperator: _evaluateByOperator2.default,
-      callFunction: _evaluateByOperator2.default,
+      callFunction: function callFunction(name, params) {
+        return _this._callFunction(name, params);
+      },
       cellValue: function cellValue(value) {
         return _this._callCellValue(value);
       },
@@ -75306,6 +75307,7 @@ var Parser = function (_Emitter) {
       }
     };
     _this.variables = Object.create(null);
+    _this.functions = Object.create(null);
 
     _this.setVariable('TRUE', true).setVariable('FALSE', false).setVariable('NULL', null);
     return _this;
@@ -75405,6 +75407,65 @@ var Parser = function (_Emitter) {
       }
 
       return value;
+    }
+
+    /**
+      * Set custom function which can be visible while parsing formula expression.
+      *
+      * @param {String} name Custom function name.
+      * @param {Function} fn Custom function.
+      * @returns {Parser}
+      */
+
+  }, {
+    key: 'setFunction',
+    value: function setFunction(name, fn) {
+      this.functions[name] = fn;
+
+      return this;
+    }
+
+    /**
+      * Get custom function.
+      *
+      * @param {String} name Custom function name.
+      * @returns {*}
+      */
+
+  }, {
+    key: 'getFunction',
+    value: function getFunction(name) {
+      return this.functions[name];
+    }
+
+    /**
+      * Call function with provided params.
+      *
+      * @param name Function name.
+      * @param params Function params.
+      * @returns {*}
+      * @private
+      */
+
+  }, {
+    key: '_callFunction',
+    value: function _callFunction(name) {
+      var params = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : [];
+
+      var fn = this.getFunction(name);
+      var value = void 0;
+
+      if (fn) {
+        value = fn(params);
+      }
+
+      this.emit('callFunction', name, params, function (newValue) {
+        if (newValue !== void 0) {
+          value = newValue;
+        }
+      });
+
+      return value === void 0 ? (0, _evaluateByOperator2.default)(name, params) : value;
     }
 
     /**

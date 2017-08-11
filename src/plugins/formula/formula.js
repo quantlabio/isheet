@@ -7,7 +7,7 @@ var ruleJS = (function (root) {
   var instance = this;
   var rootElement = document.getElementById(root) || null;
   var version = '1.0.0';
-  var parser = {};
+  var parser = new Parser();
   var el = {};
   var Matrix = function () {
     var item = {
@@ -802,7 +802,7 @@ var ruleJS = (function (root) {
   var init = function (hotInstance) {
     instance = this;
 
-    parser = new Parser();
+    //parser = new Parser();
 
     parser.on('callCellValue', function(cellCoord, done) {
       var val = instance.helper.cellValue.call(el, cellCoord.label);
@@ -852,7 +852,8 @@ var ruleJS = (function (root) {
     version: version,
     utils: utils,
     helper: helper,
-    parse: parse
+    parse: parse,
+    parser: parser
   };
 
 });
@@ -867,9 +868,9 @@ class Formula extends BasePlugin {
        cellValue: hotInstance.getDataAtCell
      };
 
-     hotInstance.plugin = new ruleJS();
-     hotInstance.plugin.init(hotInstance);
-     hotInstance.plugin.custom = custom;
+     hotInstance.formula = new ruleJS();
+     hotInstance.formula.init(hotInstance);
+     hotInstance.formula.custom = custom;
 
    }
 
@@ -895,21 +896,21 @@ class Formula extends BasePlugin {
              prevValue = item[2],
              value = item[3];
 
-         var cellId = instance.plugin.utils.translateCellCoords({
+         var cellId = instance.formula.utils.translateCellCoords({
            row: row,
            col: col
          });
 
          // if changed value, all references cells should be recalculated
          if (value[0] !== '=' || prevValue !== value) {
-           instance.plugin.matrix.removeItem(cellId);
+           instance.formula.matrix.removeItem(cellId);
 
            // get referenced cells
-           var deps = instance.plugin.matrix.getDependencies(cellId);
+           var deps = instance.formula.matrix.getDependencies(cellId);
 
            // update cells
            deps.forEach(function(itemId) {
-             instance.plugin.matrix.updateItem(itemId, {
+             instance.formula.matrix.updateItem(itemId, {
                needUpdate: true
              });
            });
@@ -943,7 +944,7 @@ class Formula extends BasePlugin {
        }
 
        return {
-         value: instance.plugin.utils.updateFormula(value, direction, delta),
+         value: instance.formula.utils.updateFormula(value, direction, delta),
          iterators: iterators
        }
 
@@ -952,11 +953,11 @@ class Formula extends BasePlugin {
        // increment or decrement  values for more than 2 selected cells
        if (rlength >= 2 || clength >= 2) {
 
-         var newValue = instance.plugin.helper.number(value),
+         var newValue = instance.formula.helper.number(value),
              ii,
              start;
 
-         if (instance.plugin.utils.isNumber(newValue)) {
+         if (instance.formula.utils.isNumber(newValue)) {
 
            if (['down', 'up'].indexOf(direction) !== -1) {
 
@@ -969,7 +970,7 @@ class Formula extends BasePlugin {
                ii = (selected.row - r) % rlength;
                start = ii > 0 ? rlength - ii : 0;
 
-               newValue = instance.plugin.helper.number(data[start][c]);
+               newValue = instance.formula.helper.number(data[start][c]);
 
                newValue += (delta * rlength * iterators.row);
 
@@ -990,7 +991,7 @@ class Formula extends BasePlugin {
                ii = (selected.col - c) % clength;
                start = ii > 0 ? clength - ii : 0;
 
-               newValue = instance.plugin.helper.number(data[r][start]);
+               newValue = instance.formula.helper.number(data[r][start]);
 
                newValue += (delta * clength * (iterators.col || 1));
 
@@ -1024,20 +1025,20 @@ class Formula extends BasePlugin {
 
      var instance = this.instance;
 
-     var selectedRow = instance.plugin.utils.isArray(instance.getSelected()) ? instance.getSelected()[0] : undefined;
+     var selectedRow = instance.formula.utils.isArray(instance.getSelected()) ? instance.getSelected()[0] : undefined;
 
-     if (instance.plugin.utils.isUndefined(selectedRow)) {
+     if (instance.formula.utils.isUndefined(selectedRow)) {
        return;
      }
 
      var direction = (selectedRow >= row) ? 'before' : 'after',
-         items = instance.plugin.matrix.getRefItemsToRow(row),
+         items = instance.formula.matrix.getRefItemsToRow(row),
          counter = 1,
          changes = [];
 
      items.forEach(function(id) {
-       var item = instance.plugin.matrix.getItem(id),
-           formula = instance.plugin.utils.changeFormula(item.formula, 1, {
+       var item = instance.formula.matrix.getItem(id),
+           formula = instance.formula.utils.changeFormula(item.formula, 1, {
              row: row
            }), // update formula if needed
            newId = id;
@@ -1046,14 +1047,14 @@ class Formula extends BasePlugin {
 
          // change row index and get new coordinates
          if ((direction === 'before' && selectedRow <= item.row) || (direction === 'after' && selectedRow < item.row)) {
-           newId = instance.plugin.utils.changeRowIndex(id, counter);
+           newId = instance.formula.utils.changeRowIndex(id, counter);
          }
 
-         var cellCoords = instance.plugin.utils.cellCoords(newId);
+         var cellCoords = instance.formula.utils.cellCoords(newId);
 
          if (newId !== id) {
            // remove current item from matrix
-           instance.plugin.matrix.removeItem(id);
+           instance.formula.matrix.removeItem(id);
          }
 
          // set updated formula in new cell
@@ -1062,7 +1063,7 @@ class Formula extends BasePlugin {
      });
 
      if (items) {
-       instance.plugin.matrix.removeItemsBelowRow(row);
+       instance.formula.matrix.removeItemsBelowRow(row);
      }
 
      if (changes) {
@@ -1073,21 +1074,21 @@ class Formula extends BasePlugin {
    afterCreateCol(col) {
      var instance = this.instance;
 
-     var selectedCol = instance.plugin.utils.isArray(instance.getSelected()) ? instance.getSelected()[1] : undefined;
+     var selectedCol = instance.formula.utils.isArray(instance.getSelected()) ? instance.getSelected()[1] : undefined;
 
-     if (instance.plugin.utils.isUndefined(selectedCol)) {
+     if (instance.formula.utils.isUndefined(selectedCol)) {
        return;
      }
 
-     var items = instance.plugin.matrix.getRefItemsToColumn(col),
+     var items = instance.formula.matrix.getRefItemsToColumn(col),
          counter = 1,
          direction = (selectedCol >= col) ? 'before' : 'after',
          changes = [];
 
      items.forEach(function(id) {
 
-       var item = instance.plugin.matrix.getItem(id),
-           formula = instance.plugin.utils.changeFormula(item.formula, 1, {
+       var item = instance.formula.matrix.getItem(id),
+           formula = instance.formula.utils.changeFormula(item.formula, 1, {
              col: col
            }), // update formula if needed
            newId = id;
@@ -1096,14 +1097,14 @@ class Formula extends BasePlugin {
 
          // change col index and get new coordinates
          if ((direction === 'before' && selectedCol <= item.col) || (direction === 'after' && selectedCol < item.col)) {
-           newId = instance.plugin.utils.changeColIndex(id, counter);
+           newId = instance.formula.utils.changeColIndex(id, counter);
          }
 
-         var cellCoords = instance.plugin.utils.cellCoords(newId);
+         var cellCoords = instance.formula.utils.cellCoords(newId);
 
          if (newId !== id) {
            // remove current item from matrix if id changed
-           instance.plugin.matrix.removeItem(id);
+           instance.formula.matrix.removeItem(id);
          }
 
          // set updated formula in new cell
@@ -1112,7 +1113,7 @@ class Formula extends BasePlugin {
      });
 
      if (items) {
-       instance.plugin.matrix.removeItemsBelowCol(col);
+       instance.formula.matrix.removeItemsBelowCol(col);
      }
 
      if (changes) {

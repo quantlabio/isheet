@@ -26,6 +26,8 @@ function formulaRenderer(instance, TD, row, col, prop, value, cellProperties) {
   //set cellProperties
   if(cellProperties.fontWeight != null)
     TD.style.fontWeight = cellProperties.fontWeight;
+  if(cellProperties.fontStyle != null)
+    TD.style.fontStyle = cellProperties.fontStyle;
   if(cellProperties.color != null)
     TD.style.color = cellProperties.color;
   if(cellProperties.background != null)
@@ -33,7 +35,7 @@ function formulaRenderer(instance, TD, row, col, prop, value, cellProperties) {
 
   if (isFormula(value)) {
     // translate coordinates into cellId
-    var cellId = instance.plugin.utils.translateCellCoords({
+    var cellId = instance.formula.utils.translateCellCoords({
           row: row,
           col: col
         }),
@@ -46,11 +48,8 @@ function formulaRenderer(instance, TD, row, col, prop, value, cellProperties) {
       return;
     }
 
-    // set formula cell id attribute
-    //TD.id = cellId;
-
     // get cell data
-    var item = instance.plugin.matrix.getItem(cellId);
+    var item = instance.formula.matrix.getItem(cellId);
 
     if (item) {
 
@@ -84,11 +83,11 @@ function formulaRenderer(instance, TD, row, col, prop, value, cellProperties) {
           };
 
           // add item to matrix
-          currentItem = instance.plugin.matrix.addItem(item);
+          currentItem = instance.formula.matrix.addItem(item);
         }
 
         // parse formula
-        var newValue = instance.plugin.parse(formula, {
+        var newValue = instance.formula.parse(formula, {
           row: row,
           col: col,
           id: cellId
@@ -98,7 +97,7 @@ function formulaRenderer(instance, TD, row, col, prop, value, cellProperties) {
         needUpdate = (newValue.error === '#NEED_UPDATE');
 
         // update item value and error
-        instance.plugin.matrix.updateItem(currentItem, {
+        instance.formula.matrix.updateItem(currentItem, {
           formula: formula,
           value: newValue.result,
           error: newValue.error,
@@ -125,9 +124,9 @@ function formulaRenderer(instance, TD, row, col, prop, value, cellProperties) {
     }
 
     // change background color
-    if (instance.plugin.utils.isSet(error)) {
+    if (instance.formula.utils.isSet(error)) {
       addClass(TD, 'formula-error');
-    } else if (instance.plugin.utils.isSet(result)) {
+    } else if (instance.formula.utils.isSet(result)) {
       removeClass(TD, 'formula-error');
       addClass(TD, 'formula');
     }
